@@ -75,32 +75,51 @@ There are a number of symbols resembling the equals sign `=`. Here are a few com
 
 In JavaScript:
 
-```js
+```swift
 // equality
-2 === 3
+2 == 3
 
 // inequality
-2 !== 3
+2 != 3
 
 // approximately equal
-almostEqual(Math.PI, 3.14159, 1e-5)
+public protocol AlmostEquatable {
+    @warn_unused_result
+    func ==~(lhs: Self, rhs: Self) -> Bool
+}
 
-function almostEqual(a, b, epsilon) {
-  return Math.abs(a - b) <= epsilon
+public protocol EquatableWithinEpsilon: Strideable {
+    static var Epsilon: Self.Stride { get }
+}
+
+extension Float: EquatableWithinEpsilon {
+    public static let Epsilon: Float.Stride = 1e-8
+}
+
+extension Double: EquatableWithinEpsilon {
+    public static let Epsilon: Double.Stride = 1e-16
+}
+
+private func almostEqual<T: EquatableWithinEpsilon>(lhs: T, _ rhs: T, epsilon: T.Stride) -> Bool {
+    return abs(lhs - rhs) <= epsilon
+}
+
+/** Almost-equality of floating point types. */
+infix operator ==~ { associativity left precedence 130 }
+public func ==~<T: protocol<AlmostEquatable, EquatableWithinEpsilon>>(lhs: T, rhs: T) -> Bool {
+    return almostEqual(lhs, rhs, epsilon: T.Epsilon)
+}
+
+/** Inverse almost-equality for any AlmostEquatable. */
+infix operator !==~ { associativity left precedence 130 }
+public func !==~<T: AlmostEquatable>(lhs: T, rhs: T) -> Bool {
+    return !(lhs ==~ rhs)
 }
 ```
 
-You might see the `:=`, `=:` and `=` symbols being used for *definition*.<sup>[1]</sup>
+In Swift, we might use `var` to *define* our variables and provide aliases:
 
-For example, the following defines *x* to be another name for 2*kj*.
-
-![equals1](http://latex.codecogs.com/svg.latex?x%20%3A%3D%202kj)
-
-<!-- x := 2kj -->
-
-In JavaScript, we might use `var` to *define* our variables and provide aliases:
-
-```js
+```swift
 var x = 2 * k * j
 ```
 
@@ -109,7 +128,7 @@ However, this is mutable, and only takes a snapshot of the values at that time. 
 A more accurate *define* in JavaScript (ES6) might look a bit like this:
 
 ```js
-const f = (k, j) => 2 * k * j
+let f = (k, j) => 2 * k * j
 ```
 
 The following, on the other hand, represents equality:
